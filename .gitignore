@@ -1,0 +1,22 @@
+# Unreal Engine generated folders
+Binaries/
+Build/
+DerivedDataCache/
+Intermediate/
+Saved/
+.vs/
+
+# IDE and OS files
+.idea/
+.vscode/
+*.VC.db
+*.VC.opendb
+*.sln
+*.suo
+Thumbs.db
+Desktop.ini
+
+# Obsidian local UI state
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+

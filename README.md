@@ -2,7 +2,7 @@
 
 这是一个面向学习的 Unreal Engine 5 City Sample Rule Processor 实验仓库，记录如何从 `CITY_buildings` 点云中逐步筛选并生成单栋建筑的主体、碰撞、独立屋顶几何和 Rooftop Biome。
 
-当前版本：`v0.1.0`
+当前版本：`v0.2.0`
 
 ## 已完成内容
 
@@ -12,19 +12,21 @@
 - 生成独立的 `building_collision` 碰撞 Actor；
 - 识别并生成 `SM_arbitrary_roof_*` Roof Geo；
 - 使用 `building_rooftop_biom` 和 `unreal_instance` 生成屋顶蓝图实例；
+- 创建自定义 Packed Level Actor 屋顶套件，并通过 `Override Objects Map` 替换原始 Rooftop Blueprint；
 - 记录 Bounding Box 在模块级过滤时切坏完整建筑的原因。
 
-![Rooftop Biome 生成结果](Notes/assets/CitySample/11-rooftop-biome-on-building.png)
+![自定义 Rooftop Kit 生成结果](Notes/assets/CitySample/04-rooftop-blueprint-override/06-generated-custom-rooftop-result.png)
 
 ## 仓库结构
 
 ```text
 Content/
-├─ LearningLab/                         实验地图与 Rule Processor 规则资产
+├─ LearningLab/                         实验地图、规则和自定义 Rooftop Kit
 └─ __ExternalActors__/LearningLab/      World Partition 地图的配套 Actor 数据
 
 Notes/
 ├─ CitySample学习笔记.md                Obsidian/Markdown 学习笔记
+├─ 04-自定义屋顶套件替换-Override-Objects-Map.md
 └─ assets/CitySample/                   操作过程与结果截图
 ```
 
@@ -49,7 +51,7 @@ Notes/
 
 6. 在 `/Game/LearningLab/Experiments` 中查看各阶段 Rule Processor 规则。
 
-建议先阅读 [CitySample 学习笔记](Notes/CitySample学习笔记.md)，其中按照“是什么、为什么、怎么做”记录了完整实验过程、Report 数据、Python 命令和排错结论。
+建议先阅读 [CitySample 学习笔记](Notes/CitySample学习笔记.md)，其中按照“是什么、为什么、怎么做”记录了完整实验过程、Report 数据、Python 命令和排错结论。自定义蓝图替换实验见 [04｜用自定义 Packed Level Actor 替换屋顶蓝图](Notes/04-自定义屋顶套件替换-Override-Objects-Map.md)。
 
 ## 当前实验资产
 
@@ -58,12 +60,13 @@ Notes/
 | `RP_01_Buildings` | `Building_ID=147000` 的建筑主体 |
 | `RP_02_BuildingCollision` | `Building_ID=147000` 的独立碰撞 |
 | `RP_03_BuildingRoofGeo` | `Building_ID=147001` 的独立 Roof Geo |
-| `RP_04_BuildingRooftops` | `Building_ID=147001` 的 Rooftop Biome |
+| `RP_04_BuildingRooftops` | `Building_ID=147001` 的 Rooftop Biome，并将原类 Override 为自定义套件 |
 | `RP_05_Buildings_147001` | `Building_ID=147001` 的建筑主体 |
+| `BPP_Lab_Rooftop_01` | 由三个水箱组成的自定义 Packed Level Actor |
+| `L_Lab_Rooftop_01` | 自定义屋顶套件的配套 Level 资产 |
 
 ## 重要说明
 
 本仓库用于技术研究和学习记录，不包含完整 City Sample 工程，也不包含运行所需的大规模原始模型、材质、点云和插件源码。使用者必须自行从 Epic Games 官方渠道取得 City Sample，并遵守 Epic Games/Unreal Engine 对相关内容的许可条款。
 
 仓库中的 `.uasset`、`.umap` 依赖 City Sample 内容引用，不应被视为对 Epic Games 第三方内容授予任何额外许可。
-

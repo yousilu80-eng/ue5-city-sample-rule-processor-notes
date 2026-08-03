@@ -4,21 +4,21 @@ tags:
   - CitySample
   - RuleProcessor
   - 程序化城市
-status: 阶段一已完成
+status: 阶段四已完成
 project: F:\CitySample
 map: /Game/LearningLab/Maps/L_01_CityGeneration_Lab
 ---
 
 # City Sample 学习笔记
 
-> 当前里程碑：使用 Rule Processor 从 `CITY_buildings` 点云中筛选 `Building_ID = 147000`，成功生成一栋完整建筑主体。
+> 当前里程碑：已完成建筑主体、碰撞、Roof Geo、Rooftop Biome，并用 `Override Objects Map` 将原屋顶蓝图替换为自定义 Packed Level Actor。
 
 ![[assets/CitySample/04-single-building-result-front.png]]
 
 ## 学习路线
 
 1. Rule Processor 与 Small City 建筑生成（当前）
-2. 建筑碰撞、Roof Geo 与 Rooftops
+2. 建筑碰撞、Roof Geo 与 Rooftops（已完成）
 3. Houdini 点云及其元数据来源
 4. World Partition、Data Layer 与 HLOD
 5. Mass Traffic、ZoneGraph 与车辆
@@ -623,6 +623,16 @@ ROOFTOP_BIOM_N558124
 
 ---
 
+# 04｜自定义屋顶套件替换
+
+本阶段已经把原 `BPP_Rooftop_small_I` 非破坏式替换为自制的三水箱 Packed Level Actor，并验证生成类、点云 Transform 和 `$INDEX` 命名机制。
+
+完整步骤、截图、原理图和排错清单见：
+
+[[04-自定义屋顶套件替换-Override-Objects-Map]]
+
+GitHub 阅读入口：[04｜用自定义 Packed Level Actor 替换屋顶蓝图](04-自定义屋顶套件替换-Override-Objects-Map.md)
+
 ## 下一步
 
-下一阶段研究建筑生成系统的输入数据：检查 `CITY_buildings` 中一个点如何通过 `unreal_instance`、`type`、`Building_ID`、`CollisionEnabled` 等 Metadata，依次流向主体、碰撞、Roof Geo 和 Rooftop Biome 四条生成分支。这样可以把目前“会复制和筛选规则”推进到“能读懂并自行设计规则”。
+制作第二个自定义 Rooftop Kit，研究如何利用不同 `unreal_instance` 或新的 Metadata 分支选择不同屋顶套件，再继续分析 Pivot、碰撞和实例化性能。

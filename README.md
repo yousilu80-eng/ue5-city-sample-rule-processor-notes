@@ -15,7 +15,7 @@
 - 创建自定义 Packed Level Actor 屋顶套件，并通过 `Override Objects Map` 替换原始 Rooftop Blueprint；
 - 记录 Bounding Box 在模块级过滤时切坏完整建筑的原因。
 
-![原始 Rooftop Kit 生成结果](Notes/assets/CitySample/11-rooftop-biome-on-building.png)
+![自定义 Rooftop Kit 替换后的生成结果](Notes/assets/CitySample/16-custom-rooftop-generated.png)
 
 ## 仓库结构
 

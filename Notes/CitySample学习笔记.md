@@ -731,6 +731,8 @@ ROOFTOP_BIOM_N558124
 
 映射方向不能反。左侧表示点云原本想生成的对象，右侧表示实验中实际替换成的对象。两边也都不能保持 `None`。
 
+![[assets/CitySample/15-override-objects-map.png]]
+
 ### 第六步：先 Report，再 Generate
 
 先运行 Report，确认筛选链路仍然只得到一个 Rooftop Biome 点：
@@ -742,6 +744,8 @@ Spawn Blueprint                → Instance count = 1
 ```
 
 确认数量后再清理旧生成结果并执行 Generate。最终 Outliner 中 Actor 名仍是 `ROOFTOP_BIOM_N558124`，但它的实际类已经变为 `BPP_Lab_Rooftop_01`，三个自定义水箱会按原点的 Transform 正确落在 `147001` 的屋顶上。
+
+![[assets/CitySample/16-custom-rooftop-generated.png]]
 
 ## 4.4 原理总结
 

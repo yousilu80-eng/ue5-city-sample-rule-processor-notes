@@ -4,21 +4,21 @@ tags:
   - CitySample
   - RuleProcessor
   - 程序化城市
-status: 阶段一已完成
+status: 阶段四已完成
 project: F:\CitySample
 map: /Game/LearningLab/Maps/L_01_CityGeneration_Lab
 ---
 
 # City Sample 学习笔记
 
-> 当前里程碑：使用 Rule Processor 从 `CITY_buildings` 点云中筛选 `Building_ID = 147000`，成功生成一栋完整建筑主体。
+> 当前里程碑：已完成建筑主体、碰撞、Roof Geo、Rooftop Biome，并用 `Override Objects Map` 将原屋顶蓝图替换为自定义 Packed Level Actor。
 
 ![[assets/CitySample/04-single-building-result-front.png]]
 
 ## 学习路线
 
 1. Rule Processor 与 Small City 建筑生成（当前）
-2. 建筑碰撞、Roof Geo 与 Rooftops
+2. 建筑碰撞、Roof Geo 与 Rooftops（已完成）
 3. Houdini 点云及其元数据来源
 4. World Partition、Data Layer 与 HLOD
 5. Mass Traffic、ZoneGraph 与车辆
@@ -623,6 +623,166 @@ ROOFTOP_BIOM_N558124
 
 ---
 
+# 04｜用 Override Objects Map 替换屋顶套件
+
+这一阶段不再只复现 City Sample 的结果，而是做第一次可控改造：保留点云、筛选条件和生成位置，把 City Sample 原来的屋顶蓝图替换成自己制作的三水箱屋顶套件。
+
+## 4.1 是什么
+
+`CITY_buildings` 中的 Rooftop Biome 点并不直接保存水箱、管线等模型，而是通过 Metadata `unreal_instance` 引用一个蓝图类。`RP_04_BuildingRooftops` 的 `Spawn Blueprint` 读取这个值并生成对应 Actor。
+
+这次使用 `Override Objects Map` 做一次类替换：
+
+```text
+点云原始 unreal_instance
+    BPP_Rooftop_small_I
+             ↓ Override Objects Map
+自定义 Packed Level Actor
+    BPP_Lab_Rooftop_01
+```
+
+因此，输入点和 Transform 都保持不变，只有最终生成的屋顶套件类发生变化。
+
+## 4.2 为什么这样做
+
+直接修改 `CITY_buildings` 或 City Sample 原始蓝图会破坏参照物，也不利于后面升级、比较和回退。Override 的价值是把“原始数据描述什么”和“实验中实际生成什么”分开：
+
+- 不修改原始点云；
+- 不修改 City Sample 自带的 `BPP_Rooftop_small_I`；
+- 可以随时清空映射恢复原效果；
+- 可以在相同点位和 Transform 下公平比较不同屋顶套件；
+- 自定义资产全部放在 `LearningLab`，实验边界清楚。
+
+## 4.3 怎么做
+
+### 第一步：确认被替换的原始蓝图
+
+原始生成结果来自 `BPP_Rooftop_small_I`。打开它后可以看到这是一个 Packed Level Actor，内部由多个 Instanced Static Mesh 组件共同组成，而不是一个单独的水箱模型。
+
+![[assets/CitySample/12-original-rooftop-blueprint.png]]
+
+这解释了为什么点云只需要引用一个蓝图，就能一次生成一整套屋顶设施。
+
+### 第二步：制作自己的屋顶组合
+
+在实验地图中放置三个 `SM_roof_Compressor_A_N1`，调整为需要的排列，然后同时选中三个 Actor，执行：
+
+```text
+右键选择 → Level → Create Packed Level Actor
+```
+
+Pivot Type 使用 `Center Min Z`。这样生成点提供的位置会落在组合底部中心，屋顶套件更容易贴合楼面；如果 Pivot 在模型中心，生成后通常会有一半陷入屋顶或整体悬空。
+
+![[assets/CitySample/13-custom-packed-level-actor.png]]
+
+将生成资产保存到学习目录：
+
+```text
+/Game/LearningLab/Blueprints/RooftopKit_01/BPP_Lab_Rooftop_01
+/Game/LearningLab/Blueprints/RooftopKit_01/L_Lab_Rooftop_01
+```
+
+其中 `BPP_Lab_Rooftop_01` 是 Rule Processor 最终生成的 Packed Level Actor 类，`L_Lab_Rooftop_01` 是它配套的 Level 资产。
+
+![[assets/CitySample/14-custom-assets-in-learninglab.png]]
+
+### 第三步：限制到测试建筑
+
+为了避免一次生成全部 1756 个 Rooftop Biome，`RP_04_BuildingRooftops` 继续使用单栋建筑过滤：
+
+```text
+Metadata: Single Building 147001
+    Key = Building_ID
+    Value = 147001
+
+Matches Filter
+└─ Metadata: building_rooftop_biom
+       Key = type
+       Value = building_rooftop_biom
+```
+
+这里必须先按 `Building_ID` 取出整栋建筑的数据，再在其内部寻找 Rooftop Biome 点。`147000` 得到 0 个点不是规则错误，而是该建筑本来就没有这种点；`147001` 才是本实验中合适的样本。
+
+### 第四步：设置 Spawn Blueprint
+
+`Spawn Blueprint` 保持读取点云原始引用：
+
+```text
+Metadata Key = unreal_instance
+Name Pattern = ROOFTOP_BIOM_N$INDEX
+```
+
+`$INDEX` 是点云记录索引，不是 `Building_ID`。所以生成结果名仍可能是：
+
+```text
+ROOFTOP_BIOM_N558124
+```
+
+这表示它来自索引为 `558124` 的点；它仍然属于 `Building_ID=147001`。
+
+### 第五步：填写 Override Objects Map
+
+在 `Spawn Blueprint → Overrides → Override Objects Map` 中添加一个映射：
+
+```text
+左侧（原对象） BPP_Rooftop_small_I
+右侧（替换对象） BPP_Lab_Rooftop_01
+```
+
+映射方向不能反。左侧表示点云原本想生成的对象，右侧表示实验中实际替换成的对象。两边也都不能保持 `None`。
+
+### 第六步：先 Report，再 Generate
+
+先运行 Report，确认筛选链路仍然只得到一个 Rooftop Biome 点：
+
+```text
+Building_ID = 147001            → 1896 points
+type = building_rooftop_biom    → 1 point
+Spawn Blueprint                → Instance count = 1
+```
+
+确认数量后再清理旧生成结果并执行 Generate。最终 Outliner 中 Actor 名仍是 `ROOFTOP_BIOM_N558124`，但它的实际类已经变为 `BPP_Lab_Rooftop_01`，三个自定义水箱会按原点的 Transform 正确落在 `147001` 的屋顶上。
+
+## 4.4 原理总结
+
+这条生成链可以理解为：
+
+```text
+CITY_buildings 点
+  ├─ Building_ID：属于哪栋建筑
+  ├─ type：属于哪类生成数据
+  ├─ unreal_instance：原本要生成哪个蓝图
+  └─ Transform：生成到哪里、如何旋转和缩放
+             ↓
+Rule Processor 逐层筛选
+             ↓
+Spawn Blueprint 读取 unreal_instance
+             ↓
+Override Objects Map 替换类
+             ↓
+使用原 Transform 生成自定义 Packed Level Actor
+```
+
+也就是说，位置正确并不是 Override 重新计算出来的，而是点云 Transform、蓝图原点和 Packed Level Actor Pivot 共同作用的结果。Override 只替换“生成谁”。
+
+## 4.5 排错清单
+
+- Report 为 0：先确认该 `Building_ID` 是否真的具有 `type=building_rooftop_biom`；
+- 仍生成原蓝图：检查映射方向是否为“原对象 → 自定义对象”，并保存 `RP_04_BuildingRooftops`；
+- 生成后不在屋顶：检查自定义套件 Pivot，优先使用 `Center Min Z`；
+- Actor 名还是 `ROOFTOP_BIOM_N558124`：这是正常的，名称由 `$INDEX` 决定，不代表 Override 失败；
+- 修改后场景出现重复：清理上一次生成的 Actor，再重新 Generate；
+- 日志出现 `Revision control is not enabled`：这是未启用 UE 版本控制提供者的提示，不等于 Rule Processor 生成失败；应以 Report、生成返回值和 Outliner 结果为准。
+
+## 本阶段结论
+
+- 已从单纯复现推进到可控替换；
+- 自定义屋顶套件已保存在 `LearningLab` 内；
+- `Override Objects Map` 可以在不修改点云和原始蓝图的情况下替换生成类；
+- `$INDEX`、`Building_ID` 和 `unreal_instance` 分别承担点索引、建筑归属和资产引用，不能混用；
+- 正确落位依赖点云 Transform 与自定义 Packed Level Actor Pivot；
+- 单点可以生成由多个网格组成的完整 Packed Level Actor。
+
 ## 下一步
 
-下一阶段研究建筑生成系统的输入数据：检查 `CITY_buildings` 中一个点如何通过 `unreal_instance`、`type`、`Building_ID`、`CollisionEnabled` 等 Metadata，依次流向主体、碰撞、Roof Geo 和 Rooftop Biome 四条生成分支。这样可以把目前“会复制和筛选规则”推进到“能读懂并自行设计规则”。
+制作第二个自定义 Rooftop Kit，研究如何利用不同 `unreal_instance` 或新的 Metadata 分支选择不同屋顶套件，再继续分析 Pivot、碰撞和实例化性能。
